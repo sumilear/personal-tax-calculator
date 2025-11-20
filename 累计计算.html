@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025年个人所得税计算器</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2ecc71;
+            --secondary-dark: #27ae60;
+            --danger: #e74c3c;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e9ecef;
+            background: white;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            flex: 1;
+            text-align: center;
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background-color: #f8f9fa;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: white;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--gray);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            text-align: center;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        .result-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #ddd;
+        }
+        
+        .tax-amount {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-align: center;
+            margin: 15px 0;
+            padding: 15px;
+            background-color: white;
+            border-radius: var(--border-radius);
+        }
+        
+        .monthly-details {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .month-detail {
+            background: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .month-header {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+        
+        .deduction-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .deduction-option {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+        }
+        
+        .deduction-option input {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .total-deductions {
+            background: var(--secondary);
+            color: white;
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            margin-top: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            .card-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .deduction-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>2025年个人所得税计算器</h1>
+            <p class="subtitle">支持累计预扣法月度计算与年度汇算清缴</p>
+        </header>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="monthly">全年月度计算</div>
+            <div class="tab" data-tab="single-month">单月计算</div>
+            <div class="tab" data-tab="annual">年度计算</div>
+        </div>
+        
+        <!-- 全年月度计算标签页 -->
+        <div class="tab-content active" id="monthly-tab">
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i>📅</i>
+                        </div>
+                        <h2 class="card-title">月度个人所得税计算（累计预扣法）</h2>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="cumulative-monthly-income">月薪 (元)</label>
+                        <input type="number" id="cumulative-monthly-income" placeholder="请输入您的月薪" value="15000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="cumulative-monthly-special-deduction">月度专项扣除 (元)</label>
+                        <input type="number" id="cumulative-monthly-special-deduction" placeholder="五险一金等" value="1500">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>专项附加扣除</label>
+                        <div class="deduction-options">
+                            <div class="deduction-option">
+                                <input type="checkbox" id="cumulative-children-edu" value="1000">
+                                <label for="cumulative-children-edu">子女教育 (1000元/月)</label>
+                            </div>
+                            <div class="deduction-option">
+                                <input type="checkbox" id="cumulative-housing-loan" value="1000">
+                                <label for="cumulative-housing-loan">住房贷款利息 (1000元/月)</label>
+                            </div>
+                            <div class="deduction-option">
+                                <input type="checkbox" id="cumulative-housing-rent" value="1500">
+                                <label for="cumulative-housing-rent">住房租金 (1500元/月)</label>
+                            </div>
+                            <div class="deduction-option">
+                                <input type="checkbox" id="cumulative-support-elderly" value="2000">
+                                <label for="cumulative-support-elderly">赡养老人 (2000元/月)</label>
+                            </div>
+                            <div class="deduction-option">
+                                <input type="checkbox" id="cumulative-infant-care" value="1000">
+                                <label for="cumulative-infant-care">婴幼儿照护 (1000元/月)</label>
+                            </div>
+                        </div>
+                        <div class="total-deductions" id="cumulative-total-deductions">
+                            已选扣除: 0元/月
+                        </div>
+                    </div>
+                    
+                    <button class="btn" id="calculate-cumulative">计算全年月度个税变化</button>
+                    
+                    <div class="result" id="cumulative-result">
+                        <h3 class="result-title">📊 全年月度个税变化趋势</h3>
+                        <div class="result-item">
+                            <span class="result-label">年收入总额:</span>
+                            <span class="result-value" id="annual-total-income">0</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">全年个税总额:</span>
+                            <span class="result-value" id="annual-tax-total">0</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">月度专项附加扣除:</span>
+                            <span class="result-value" id="cumulative-deduction-display">0元</span>
+                        </div>
+                        
+                        <div class="monthly-details" id="cumulative-monthly-details">
+                            <!-- 月度明细将在这里动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 单月计算标签页 -->
+        <div class="tab-content" id="single-month-tab">
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i>📅</i>
+                        </div>
+                        <h2 class="card-title">单月个人所得税计算</h2>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="single-month-income">月度收入 (元)</label>
+                        <input type="number" id="single-month-income" placeholder="请输入您的月收入" value="15000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="single-month-special-deduction">专项扣除 (元)</label>
+                        <input type="number" id="single-month-special-deduction" placeholder="五险一金等" value="1500">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>专项附加扣除</label>
+                        <div class="deduction-options">
+                            <div class="deduction-option">
+                                <input type="checkbox" id="single-children-edu" value="1000">
+                                <label for="single-children-edu">子女教育 (1000元/月)</label>
+                            </div>
+                            <div class="deduction-option">
+                                <input type="checkbox" id="single-housing-loan" value="1000">
+                                <label for="single-housing-loan">住房贷款利息 (1000元/月)</label>
+                            </div>
+                            <div class="deduction-option">
+                                <input type="checkbox" id="single-housing-rent" value="1500">
+                                <label for="single-housing-rent">住房租金 (1500元/月)</label>
+                            </div>
+                            <div class="deduction-option">
+                                <input type="checkbox" id="single-support-elderly" value="2000">
+                                <label for="single-support-elderly">赡养老人 (2000元/月)</label>
+                            </div>
+                            <div class="deduction-option">
+                                <input type="checkbox" id="single-infant-care" value="1000">
+                                <label for="single-infant-care">婴幼儿照护 (1000元/月)</label>
+                            </div>
+                        </div>
+                        <div class="total-deductions" id="single-total-deductions">
+                            已选扣除: 0元/月
+                        </div>
+                    </div>
+                    
+                    <button class="btn" id="calculate-single-month">计算月度个税</button>
+                    
+                    <div class="result" id="single-month-result">
+                        <h3 class="result-title">📊 单月计算结果</h3>
+                        <div class="result-item">
+                            <span class="result-label">应纳税所得额:</span>
+                            <span class="result-value" id="single-month-taxable-income">0</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">适用税率:</span>
+                            <span class="result-value" id="single-month-tax-rate">0%</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">速算扣除数:</span>
+                            <span class="result-value" id="single-month-quick-deduction">0</span>
+                        </div>
+                        <div class="tax-amount" id="single-month-tax-amount">0 元</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 年度计算标签页 -->
+        <div class="tab-content" id="annual-tab">
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i>📊</i>
+                        </div>
+                        <h2 class="card-title">年度个人所得税计算</h2>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="annual-income">年度总收入 (元)</label>
+                        <input type="number" id="annual-income" placeholder="请输入您的年收入" value="180000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="annual-special-deduction">年度专项扣除 (元)</label>
+                        <input type="number" id="annual-special-deduction" placeholder="五险一金等" value="30000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>专项附加扣除</label>
+                        <div class="deduction-options">
+                            <div class="deduction-option">
+                                <input type="checkbox" id="annual-children-edu" value="12000">
+                                <label for="annual-children-edu">子女教育 (12000元/年)</label>
+                            </div>
+                            <div class="deduction-option">
+                                <input type="checkbox" id="annual-housing-loan" value="12000">
+                                <label for="annual-housing-loan">住房贷款利息 (12000元/年)</label>
+                            </div>
+                            <div class="deduction-option">
+                                <input type="checkbox" id="annual-housing-rent" value="18000">
+                                <label for="annual-housing-rent">住房租金 (18000元/年)</label>
+                            </div>
+                            <div class="deduction-option">
+                                <input type="checkbox" id="annual-support-elderly" value="24000">
+                                <label for="annual-support-elderly">赡养老人 (24000元/年)</label>
+                            </div>
+                            <div class="deduction-option">
+                                <input type="checkbox" id="annual-infant-care" value="12000">
+                                <label for="annual-infant-care">婴幼儿照护 (12000元/年)</label>
+                            </div>
+                        </div>
+                        <div class="total-deductions" id="annual-total-deductions">
+                            已选扣除: 0元/年
+                        </div>
+                    </div>
+                    
+                    <button class="btn" id="calculate-annual">计算年度个税</button>
+                    
+                    <div class="result" id="annual-result">
+                        <h3 class="result-title">📊 年度汇算清缴结果</h3>
+                        <div class="result-item">
+                            <span class="result-label">应纳税所得额:</span>
+                            <span class="result-value" id="annual-taxable-income">0</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">适用税率:</span>
+                            <span class="result-value" id="annual-tax-rate">0%</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">速算扣除数:</span>
+                            <span class="result-value" id="annual-quick-deduction">0</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">年度专项附加扣除:</span>
+                            <span class="result-value" id="annual-deduction-display">0元</span>
+                        </div>
+                        <div class="tax-amount" id="annual-tax-amount">0 元</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 年度综合所得税率表
+        const annualTaxBrackets = [
+            { max: 36000, rate: 0.03, deduction: 0 },
+            { max: 144000, rate: 0.10, deduction: 2520 },
+            { max: 300000, rate: 0.20, deduction: 16920 },
+            { max: 420000, rate: 0.25, deduction: 31920 },
+            { max: 660000, rate: 0.30, deduction: 52920 },
+            { max: 960000, rate: 0.35, deduction: 85920 },
+            { max: Infinity, rate: 0.45, deduction: 181920 }
+        ];
+
+        // 月度预扣税率表
+        const monthlyTaxBrackets = [
+            { max: 3000, rate: 0.03, deduction: 0 },
+            { max: 12000, rate: 0.10, deduction: 210 },
+            { max: 25000, rate: 0.20, deduction: 1410 },
+            { max: 35000, rate: 0.25, deduction: 2660 },
+            { max: 55000, rate: 0.30, deduction: 4410 },
+            { max: 80000, rate: 0.35, deduction: 7160 },
+            { max: Infinity, rate: 0.45, deduction: 15160 }
+        ];
+
+        // 基本减除费用
+        const monthlyBasicDeduction = 5000;
+        const annualBasicDeduction = 60000;
+
+        // 标签页切换功能
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 移除所有active类
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // 添加active类到当前标签和对应内容
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
+
+        // 更新扣除总额显示函数
+        function updateDeductions(containerId, displayId) {
+            let total = 0;
+            document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`).forEach(checkbox => {
+                total += parseFloat(checkbox.value);
+            });
+            document.getElementById(displayId).textContent = `已选扣除: ${total}元${containerId.includes('annual') ? '/年' : '/月'}`;
+            return total;
+        }
+
+        // 为所有复选框添加事件监听
+        document.querySelectorAll('.deduction-option input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const container = this.closest('.tab-content');
+                if (container.id === 'monthly-tab') {
+                    updateDeductions('monthly-tab', 'cumulative-total-deductions');
+                } else if (container.id === 'single-month-tab') {
+                    updateDeductions('single-month-tab', 'single-total-deductions');
+                } else if (container.id === 'annual-tab') {
+                    updateDeductions('annual-tab', 'annual-total-deductions');
+                }
+            });
+        });
+
+        // 初始化扣除总额显示
+        updateDeductions('monthly-tab', 'cumulative-total-deductions');
+        updateDeductions('single-month-tab', 'single-total-deductions');
+        updateDeductions('annual-tab', 'annual-total-deductions');
+
+        // 全年月度计算功能
+        document.getElementById('calculate-cumulative').addEventListener('click', function() {
+            const monthlyIncome = parseFloat(document.getElementById('cumulative-monthly-income').value) || 0;
+            const monthlySpecialDeduction = parseFloat(document.getElementById('cumulative-monthly-special-deduction').value) || 0;
+            
+            // 计算专项附加扣除总额
+            let additionalDeductions = updateDeductions('monthly-tab', 'cumulative-total-deductions');
+            
+            let cumulativeIncome = 0;
+            let cumulativePaidTax = 0;
+            let monthlyDetailsHTML = '';
+            
+            // 计算12个月的个税变化
+            for (let month = 1; month <= 12; month++) {
+                cumulativeIncome += monthlyIncome;
+                
+                // 累计应纳税所得额 = 累计收入 - 累计基本减除费用 - 累计专项扣除 - 累计专项附加扣除
+                const cumulativeTaxableIncome = cumulativeIncome - 
+                    (monthlyBasicDeduction * month) - 
+                    (monthlySpecialDeduction * month) - 
+                    (additionalDeductions * month);
+                
+                if (cumulativeTaxableIncome <= 0) {
+                    // 当前月份不需要缴税
+                    monthlyDetailsHTML += createMonthDetailHTML(month, monthlyIncome, cumulativeIncome, 
+                        cumulativeTaxableIncome, 0, 0, cumulativePaidTax);
+                    continue;
+                }
+                
+                // 根据累计应纳税所得额计算累计应纳税额
+                let cumulativeTaxAmount = 0;
+                // 适用税率
+                let taxRate=0
+                for (const bracket of annualTaxBrackets) {
+                    if (cumulativeTaxableIncome <= bracket.max) {
+                        taxRate = bracket.rate;
+                        cumulativeTaxAmount = cumulativeTaxableIncome * bracket.rate - bracket.deduction;
+                        break;
+                    }
+                }
+                // 专门的税率格式化函数
+                function formatTaxRate(rate) {
+                    // 转换为百分比，保留1位小数
+                    return (rate * 100).toFixed(1) + '%';
+                }
+                
+                // 本月应缴个税 = 累计应纳税额 - 累计已缴个税
+                const currentMonthTax = Math.max(0, cumulativeTaxAmount - cumulativePaidTax);
+                cumulativePaidTax += currentMonthTax;
+                
+                monthlyDetailsHTML += createMonthDetailHTML(month, monthlyIncome, cumulativeIncome, 
+                    cumulativeTaxableIncome, cumulativeTaxAmount, currentMonthTax, cumulativePaidTax,formatTaxRate(taxRate));
+            }
+            
+            // 显示结果
+            document.getElementById('annual-total-income').textContent = (monthlyIncome * 12).toFixed(2) + ' 元';
+            document.getElementById('annual-tax-total').textContent = cumulativePaidTax.toFixed(2) + ' 元';
+            document.getElementById('cumulative-deduction-display').textContent = additionalDeductions.toFixed(2) + ' 元/月';
+            document.getElementById('cumulative-monthly-details').innerHTML = monthlyDetailsHTML;
+            document.getElementById('cumulative-result').classList.add('show');
+        });
+
+        // 单月计算功能
+        document.getElementById('calculate-single-month').addEventListener('click', function() {
+            const monthlyIncome = parseFloat(document.getElementById('single-month-income').value) || 0;
+            const specialDeduction = parseFloat(document.getElementById('single-month-special-deduction').value) || 0;
+            
+            // 计算专项附加扣除
+            let additionalDeductions = updateDeductions('single-month-tab', 'single-total-deductions');
+            
+            // 计算应纳税所得额
+            const taxableIncome = monthlyIncome - monthlyBasicDeduction - specialDeduction - additionalDeductions;
+            
+            if (taxableIncome <= 0) {
+                displaySingleMonthResult(taxableIncome, 0, 0, 0);
+                return;
+            }
+            
+            // 查找适用税率
+            let taxRate = 0;
+            let quickDeduction = 0;
+            
+            for (const bracket of monthlyTaxBrackets) {
+                if (taxableIncome <= bracket.max) {
+                    taxRate = bracket.rate;
+                    quickDeduction = bracket.deduction;
+                    break;
+                }
+            }
+            
+            // 计算税款
+            const taxAmount = taxableIncome * taxRate - quickDeduction;
+            
+            displaySingleMonthResult(taxableIncome, taxRate, quickDeduction, taxAmount);
+        });
+
+        // 年度计算功能
+        document.getElementById('calculate-annual').addEventListener('click', function() {
+            const annualIncome = parseFloat(document.getElementById('annual-income').value) || 0;
+            const annualSpecialDeduction = parseFloat(document.getElementById('annual-special-deduction').value) || 0;
+            
+            // 计算专项附加扣除总额
+            let annualAdditionalDeductions = updateDeductions('annual-tab', 'annual-total-deductions');
+            
+            // 应纳税所得额 = 年收入 - 基本减除费用 - 专项扣除 - 专项附加扣除
+            const taxableIncome = annualIncome - annualBasicDeduction - annualSpecialDeduction - annualAdditionalDeductions;
+            
+            if (taxableIncome <= 0) {
+                displayAnnualResult(taxableIncome, 0, 0, 0, annualAdditionalDeductions);
+                return;
+            }
+            
+            // 查找适用税率
+
+            let quickDeduction = 0;
+            
+            for (const bracket of annualTaxBrackets) {
+                if (taxableIncome <= bracket.max) {
+                    taxRate = bracket.rate;
+                    quickDeduction = bracket.deduction;
+                    break;
+                }
+            }
+            
+            // 计算年度个税
+            const taxAmount = taxableIncome * taxRate - quickDeduction;
+            
+            displayAnnualResult(taxableIncome, taxRate, quickDeduction, taxAmount, annualAdditionalDeductions);
+        });
+
+        // 创建月度明细HTML
+        function createMonthDetailHTML(month, monthlyIncome, cumulativeIncome, cumulativeTaxableIncome, 
+                                      cumulativeTaxAmount, currentMonthTax, cumulativePaidTax,taxRate) {
+            return `
+                <div class="month-detail">
+                    <div class="month-header">第 ${month} 月</div>
+                    <div class="result-item">
+                        <span>本月收入:</span>
+                        <span>${monthlyIncome.toFixed(2)} 元</span>
+                    </div>
+                    <div class="result-item">
+                        <span>累计收入:</span>
+                        <span>${cumulativeIncome.toFixed(2)} 元</span>
+                    </div>
+                    <div class="result-item">
+                        <span>累计应纳税所得额:</span>
+                        <span>${cumulativeTaxableIncome.toFixed(2)} 元</span>
+                    </div>
+                    <div class="result-item">
+                        <span>税率:</span>
+                        <span>${taxRate} </span>
+                    </div>
+                    <div class="result-item">
+                        <span>累计应纳税额:</span>
+                        <span>${cumulativeTaxAmount.toFixed(2)} 元</span>
+                    </div>
+                    <div class="result-item">
+                        <span><strong>本月应缴个税:</strong></span>
+                        <span><strong>${currentMonthTax.toFixed(2)} 元</strong></span>
+                    </div>
+                    <div class="result-item">
+                        <span>累计已缴个税:</span>
+                        <span>${cumulativePaidTax.toFixed(2)} 元</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 显示单月计算结果
+        function displaySingleMonthResult(taxableIncome, taxRate, quickDeduction, taxAmount) {
+            document.getElementById('single-month-taxable-income').textContent = taxableIncome.toFixed(2) + ' 元';
+            document.getElementById('single-month-tax-rate').textContent = (taxRate * 100).toFixed(1) + '%';
+            document.getElementById('single-month-quick-deduction').textContent = quickDeduction.toFixed(2) + ' 元';
+            document.getElementById('single-month-tax-amount').textContent = Math.max(0, taxAmount).toFixed(2) + ' 元';
+            document.getElementById('single-month-result').classList.add('show');
+        }
+
+        // 显示年度计算结果
+        function displayAnnualResult(taxableIncome, taxRate, quickDeduction, taxAmount, annualAdditionalDeductions) {
+            document.getElementById('annual-taxable-income').textContent = taxableIncome.toFixed(2) + ' 元';
+            document.getElementById('annual-tax-rate').textContent = (taxRate * 100).toFixed(1) + '%';
+            document.getElementById('annual-quick-deduction').textContent = quickDeduction.toFixed(2) + ' 元';
+            document.getElementById('annual-deduction-display').textContent = annualAdditionalDeductions.toFixed(2) + ' 元';
+            document.getElementById('annual-tax-amount').textContent = Math.max(0, taxAmount).toFixed(2) + ' 元';
+            document.getElementById('annual-result').classList.add('show');
+        }
+    </script>
+</body>
+</html> 
